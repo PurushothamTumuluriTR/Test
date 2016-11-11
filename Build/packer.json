@@ -1,0 +1,39 @@
+{
+  "variables": {
+    "build_version": "",
+    "aws_region": "",
+    "ami": "",
+    "instance_type": "t2.micro",
+    "vpc_id": "",
+    "subnet_id": "",
+    "user": "ec2-user",
+    "instance_profile": "",
+    "service_builds_bucket": "",
+    "ami_users": ""
+  },
+  "builders": [{
+    "type": "amazon-ebs",
+    "ami_name": "request-report-run-{{user `build_version`}}",
+    "region": "{{user `aws_region`}}",
+    "source_ami": "{{user `ami`}}",
+    "instance_type": "{{user `instance_type`}}",
+    "associate_public_ip_address": false,
+    "ssh_username": "{{user `user`}}",
+    "vpc_id": "{{user `vpc_id`}}",
+    "subnet_id": "{{user `subnet_id`}}",
+    "iam_instance_profile": "{{user `instance_profile`}}",
+    "ami_users": "{{user `ami_users`}}"
+  }],
+  "provisioners": [{
+    "type": "shell",
+    "inline": [
+      "sudo yum update --assumeyes --quiet",
+      "cd /home/ec2-user/",
+      "aws s3 cp s3://{{user `service_builds_bucket`}}/enpoints-collation-service/Barossa-EndpointsCollationService.1.0.{{user `build_version`}}.0.zip service.zip",
+      "mkdir endpoints-collation-service",
+      "cd endpoints-collation-service",
+      "unzip  service.zip endpoints-collation-service",
+      "rm service.zip"
+    ]
+  }]
+}
