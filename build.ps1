@@ -53,9 +53,13 @@ New-Item -ItemType directory -Path $zipDirectory
 
 $packageJsonPath    = $PSScriptRoot    + '\endpoints-collation-service\package.json'
 $serverJs           = $PSScriptRoot    + '\endpoints-collation-service\server.js'
+$startServerScriptPath   = $PSScriptRoot    + '\endpoints-collation-service\startServer.sh'
+$deploymentYamlpath = $PSScriptRoot    + '\deployment.yaml'
 
 Copy-Item $packageJsonPath    $buildDirectory
 Copy-Item $serverJs           $buildDirectory
+Copy-Item $startServerScriptPath           $buildDirectory
+Copy-Item $deploymentYamlpath $buildDirectory
 
 $filename = 'Barossa-EndpointsCollationService.1.0.'+ $BuildVersion +'.0.zip'
 $zipfilepath= $zipDirectory + "\" + $filename;

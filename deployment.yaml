@@ -1,0 +1,147 @@
+﻿description: Endpoints Collation Service
+prerequisites:
+  - base-instance-profile
+parts:
+  - name: Endpoints Collation Service security group
+    description: Creates the security group for the Endpoints Collation Service.
+    order: 1
+    warnBeforeDestroy: false
+    handler: cloudformation
+    test:
+      stackName: $(instanceId)-$(endpoints-collation-service-hostname)-security-group
+      stackVersion: "1"
+    task:
+      stackName: $(instanceId)-$(endpoints-collation-service-hostname)-security-group
+      stackVersion: "1"
+      templateBody:
+        AWSTemplateFormatVersion: "2010-09-09"
+        Resources:
+          SecurityGroup:
+            Type: AWS::EC2::SecurityGroup
+            Properties:
+              GroupDescription: $(instanceId)-$(endpoints-collation-service-hostname)-security-group
+              VpcId: $(vpc)
+              SecurityGroupIngress:
+              - IpProtocol: tcp
+                FromPort: "$(endpoints-collation-service-port)"
+                ToPort: "$(endpoints-collation-service-port)"
+                CidrIp: "0.0.0.0/0"
+              - IpProtocol: tcp
+                FromPort: "$(prana-sidecar-port)"
+                ToPort: "$(prana-sidecar-port)"
+                CidrIp: "0.0.0.0/0"
+        Outputs:
+          SecurityGroupID:
+            Description: ID of the created security group
+            Value:
+              Ref: SecurityGroup
+      templateOutputs:
+        SecurityGroupID: endpoints-collation-service-security-group
+
+  - name: Endpoints Collation service instance
+    description: Starts an instance of the Endpoints Collation service
+    order: 2
+    warnBeforeDestroy: false
+    handler: cloudformation
+    test:
+      stackName: $(instanceId)-$(endpoints-collation-service-hostname)-ec2
+      stackVersion: $(endpoints-collation-service-version)
+    task:
+      stackName: $(instanceId)-$(endpoints-collation-service-hostname)-ec2
+      stackVersion: $(endpoints-collation-service-version)
+      amiLookups:
+        - name: endpoints-collation-service-$(endpoints-collation-service-version)
+          var: endpoints-collation-service-ami
+      base64Encode:
+        - value:
+            - '#!/bin/sh'
+            -
+            - 'yum update -y -q\n'
+            - 'yum install dos2unix gcc gcc-c++ -y -q\n'
+            - 'cat << EOF > /home/ec2-user/config.json'
+            - '{'
+            - '"Endpoints": $(endpoints),'
+            - '"endpoint_response_failure_xpath": $(endpoint_response_failure_xpath),'
+            - '"status_check_failure_xpath": $(status_check_failure_xpath),'
+            - '"resource_check_failure_xpath:" $(resource_check_failure_xpath)'
+            - '}'
+            - 'EOF'
+            - 'export PORT=$(endpoints-collation-service-port)'
+            - 'export CONFIG_PATH=/home/ec2-user/config.json'
+            - 'sudo sh /home/ec2-user/endpoints-collation-service/startServer.sh'
+          var: base64encoded-user-data
+      templateBody:
+        AWSTemplateFormatVersion: "2010-09-09"
+        Resources:
+          LaunchConfiguration:
+            Type: AWS::AutoScaling::LaunchConfiguration
+            Properties:
+              AssociatePublicIpAddress: False
+              IamInstanceProfile: $(base-instance-profile)
+              ImageId: $(endpoints-collation-service-ami)
+              InstanceType: $(endpoints-collation-service-instance-type)
+              SecurityGroups:
+                - $(endpoints-collation-service-security-group)
+              UserData: $(base64encoded-user-data)
+          AutoScalingGroup:
+            Type: AWS::AutoScaling::AutoScalingGroup
+            Properties:
+              DesiredCapacity: "1"
+              LaunchConfigurationName:
+                Ref: LaunchConfiguration
+              MaxSize: "1"
+              MinSize: "1"
+              Tags:
+                - Key: DomainNames
+                  Value: $(endpoints-collation-service-hostname).$(sub-domain).*
+                  PropagateAtLaunch: True
+                - Key: Name
+                  Value: $(endpoints-collation-service-hostname)
+                  PropagateAtLaunch: True
+                - Key: Environment
+                  Value: $(environment)
+                  PropagateAtLaunch: True
+              VPCZoneIdentifier:
+                - $(private-subnet-a)
+                - $(private-subnet-b)
+          HighCPUAlarm:
+            Type: AWS::CloudWatch::Alarm
+            Properties:
+              AlarmDescription: Alarm if CPU > 80% for $(high-cpu-alarm-period) seconds
+              MetricName: CPUUtilization
+              Namespace: AWS/EC2
+              Statistic: Average
+              Period: $(high-cpu-alarm-period)
+              EvaluationPeriods: "1"
+              Threshold: "80"
+              AlarmActions:
+                - $(sns-topic-alarms)
+              Dimensions:
+                - Name: AutoScalingGroupName
+                  Value:
+                    Ref: AutoScalingGroup
+              ComparisonOperator: GreaterThanThreshold
+          LowCPUCreditAlarm:
+            Type: AWS::CloudWatch::Alarm
+            Properties:
+              AlarmDescription: Alarm if CPU credits < 10 for 5 minutes
+              MetricName: CPUCreditBalance
+              Namespace: AWS/EC2
+              Statistic: Minimum
+              Period: "300"
+              EvaluationPeriods: "1"
+              Threshold: "10"
+              AlarmActions:
+                - $(sns-topic-alarms)
+              Dimensions:
+                - Name: AutoScalingGroupName
+                  Value:
+                    Ref: AutoScalingGroup
+              ComparisonOperator: LessThanThreshold
+        Outputs:
+          DashboardBoxes:
+            Description: Dashboard boxes
+            Value: '[{
+                      "check_command": "serviceStatusCheck!Endpoints Collation Service Version!http://$(endpoints-collation-service-hostname).$(sub-domain).$(root-domain):$(endpoints-collation-service-port)/result",
+                      "location": "$(instanceId)/Endpoints Collation Service/Resource Check"
+                    }]'
