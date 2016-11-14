@@ -49,7 +49,7 @@ $bakerServicePort       = "8080"
 $bakeTimeout            = ( New-Timespan -Minutes 60 )
 
 $files = @{
-  "packer.json"         = "/packer.json";
+  "packer.json"         = "packer.json";
 }
 
 #
