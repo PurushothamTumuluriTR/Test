@@ -35,14 +35,24 @@ if (Test-Path '.\endpoints-collation-service') {
 	& git clone https://git.sami.int.thomsonreuters.com/production-engineering/endpoints-collation-service
 }
 $buildDirectory = $PSScriptRoot +"/Build"
+
 if (Test-Path $buildDirectory) {
   Remove-Item $buildDirectory -recurse
 }
+
 New-Item -ItemType directory -Path $buildDirectory
 
+$packageJsonPath    = $PSScriptRoot    + '\endpoints-collation-service\package.json'
+$serverJs           = $PSScriptRoot    + 'endpoints-collation-service\server.js'
+$deploymentYamlFile = $PSScriptRoot    + '\deployment.yaml'
+
+Copy-Item $deploymentYamlFile $buildDirectory
+Copy-Item $packageJsonPath    $buildDirectory
+Copy-Item $packageJsonPath    $buildDirectory
+
 $filename = 'Barossa-EndpointsCollationService.1.0.'+ $BuildVersion +'.0.zip'
-$zipfilepath= $buildDirectory + "\" + $filename;
-$sourcefolder = $PSScriptRoot+'\endpoints-collation-service'
-ZipFolder $sourcefolder  $zipfilepath
+$zipfilepath= $PSScriptRoot + "\" + $filename;
+
+ZipFolder $buildDirectory  $zipfilepath
 
 
