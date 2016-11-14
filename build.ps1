@@ -44,9 +44,7 @@ New-Item -ItemType directory -Path $buildDirectory
 
 $packageJsonPath    = $PSScriptRoot    + '\endpoints-collation-service\package.json'
 $serverJs           = $PSScriptRoot    + 'endpoints-collation-service\server.js'
-$deploymentYamlFile = $PSScriptRoot    + '\deployment.yaml'
 
-Copy-Item $deploymentYamlFile $buildDirectory
 Copy-Item $packageJsonPath    $buildDirectory
 Copy-Item $packageJsonPath    $buildDirectory
 
