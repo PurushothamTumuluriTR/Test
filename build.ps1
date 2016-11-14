@@ -4,6 +4,7 @@ Param(
   $BuildVersion
 )
 
+
 #
 # Get endpoints-collation-service from SAMI-git.
 #
@@ -18,6 +19,8 @@ function ZipFolder($sourcefolder, $zipfile) {
 	[System.Reflection.Assembly]::LoadWithPartialName('System.IO.Compression.FileSystem')
 	[System.IO.Compression.ZipFile]::CreateFromDirectory($sourcefolder, $zipFile)
 }
+Try {
+$ErrorActionPreference = "Stop"
 
 Write-Host ""
 Write-Host ""
@@ -36,6 +39,7 @@ if (Test-Path '.\endpoints-collation-service') {
 }
 $buildDirectory = $PSScriptRoot +"/Build"
 $zipDirectory = $PSScriptRoot +"/ZipFiles"
+
 if (Test-Path $buildDirectory) {
   Remove-Item $buildDirectory -recurse
 }
@@ -45,6 +49,7 @@ if (Test-Path $zipDirectory) {
 
 
 New-Item -ItemType directory -Path $buildDirectory
+New-Item -ItemType directory -Path $zipDirectory
 
 $packageJsonPath    = $PSScriptRoot    + '\endpoints-collation-service\package.json'
 $serverJs           = $PSScriptRoot    + '\endpoints-collation-service\server.js'
@@ -57,4 +62,9 @@ $zipfilepath= $zipDirectory + "\" + $filename;
 
 ZipFolder $buildDirectory  $zipfilepath
 
+} Catch {
 
+ Write-Host "[e] FAILED: $_"
+ $exitCode = 1
+
+}
