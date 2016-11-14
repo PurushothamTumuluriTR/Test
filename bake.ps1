@@ -93,7 +93,6 @@ Write-Host "[i] Starting pre-flight checks..."
 
 $awsAccessKey                 = Get-EnvironmentVariableOrFail "AWS_ACCESS_KEY_ID"                    " [e] FAIL: AWS_ACCESS_KEY_ID environment variable is not set."
 $awsSecretAccessKey           = Get-EnvironmentVariableOrFail "AWS_SECRET_ACCESS_KEY"             " [e] FAIL: AWS_SECRET_ACCESS_KEY environment variable is not set."
-$bastionTunnelSshKeyPasshrase = Get-EnvironmentVariableOrFail "BASTION_TUNNEL_SSH_KEY_PASSPHRASE" " [e] FAIL: BASTION_TUNNEL_SSH_KEY_PASSPHRASE environment variable is not set."
 
 Write-Host "[i] Setting AWS credentials..."
 Initialize-AWSDefaults -Region $region -AccessKey $awsAccessKey -SecretKey $awsSecretAccessKey
