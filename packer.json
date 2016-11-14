@@ -31,7 +31,6 @@
       "cd /home/ec2-user/",
       "aws s3 cp s3://{{user `service_builds_bucket`}}/enpoints-collation-service/Barossa-EndpointsCollationService.1.0.{{user `build_version`}}.0.zip service.zip",
       "mkdir endpoints-collation-service",
-      "cd endpoints-collation-service",
       "unzip  service.zip endpoints-collation-service",
       "rm service.zip"
     ]
