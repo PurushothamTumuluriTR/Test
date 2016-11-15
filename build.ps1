@@ -40,16 +40,13 @@ if (Test-Path '.\endpoints-collation-service') {
 $buildDirectory = $PSScriptRoot +"/Build"
 $zipDirectory = $PSScriptRoot +"/ZipFiles"
 
-if (Test-Path $buildDirectory) {
-  Remove-Item $buildDirectory -recurse
+if (-Not(Test-Path $buildDirectory)) {
+  New-Item -ItemType directory -Path $buildDirectory
 }
-if (Test-Path $zipDirectory) {
-  Remove-Item $zipDirectory -recurse
+if (-Not(Test-Path $zipDirectory)) {
+  New-Item -ItemType directory -Path $zipDirectory
 }
 
-
-New-Item -ItemType directory -Path $buildDirectory
-New-Item -ItemType directory -Path $zipDirectory
 
 $packageJsonPath    = $PSScriptRoot    + '\endpoints-collation-service\package.json'
 $serverJs           = $PSScriptRoot    + '\endpoints-collation-service\server.js'
