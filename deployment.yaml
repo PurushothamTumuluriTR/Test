@@ -67,10 +67,8 @@ parts:
             - '}'
             - 'EOF'
             - 'dos2unix /home/ec2-user/config.json /home/ec2-user/endpoints-collation-service/server.js /home/ec2-user/endpoints-collation-service/package.json /home/ec2-user/endpoints-collation-service/*.sh'
-            - 'export PORT=$(endpoints-collation-service-port)'
-            - 'export CONFIG_PATH=/home/ec2-user/config.json'
             - 'sudo chown ec2-user /var/log/barossa'
-            - 'sudo sh /home/ec2-user/endpoints-collation-service/startServer.sh /home/ec2-user/endpoints-collation-service forever /var/log/barossa'
+            - 'sudo sh /home/ec2-user/endpoints-collation-service/startServer.sh /home/ec2-user/endpoints-collation-service forever /var/log/barossa $(endpoints-collation-service-port) /home/ec2-user/config.json'
           var: base64encoded-user-data
       templateBody:
         AWSTemplateFormatVersion: "2010-09-09"
