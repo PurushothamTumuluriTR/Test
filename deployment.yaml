@@ -62,8 +62,8 @@ parts:
             - '{'
             - '"endpoints": $(endpoints),'
             - '"endpoint_response_failure_xpath": "//results/result[@httpstatus!=200]",'
-            - '"status_check_failure_xpath": "//results/result/body/status/result[text()!='OK']",'
-            - '"resource_check_failure_xpath: "//results/result/body/status/resources/*[@result!='OK']"'
+            -  "\"status_check_failure_xpath\": \"//results/result/body/status/result[text()!='OK']\","
+            -  "\"resource_check_failure_xpath\": \"//results/result/body/status/resources/*[@result!='OK']\""
             - '}'
             - 'EOF'
             - 'dos2unix /home/ec2-user/config.json /home/ec2-user/endpoints-collation-service/server.js /home/ec2-user/endpoints-collation-service/package.json /home/ec2-user/endpoints-collation-service/*.sh'
