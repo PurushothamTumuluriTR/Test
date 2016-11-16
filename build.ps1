@@ -37,34 +37,32 @@ if (Test-Path '.\endpoints-collation-service') {
 	Write-Host "==> Getting new endpoints-collation-service..."
 	& git clone https://git.sami.int.thomsonreuters.com/production-engineering/endpoints-collation-service
 }
+
 $buildDirectory = $PSScriptRoot +"/Build"
 $zipDirectory = $PSScriptRoot +"/ZipFiles"
 
-if (-Not(Test-Path $buildDirectory)) {
-  New-Item -ItemType directory -Path $buildDirectory
+if (Test-Path $buildDirectory) {
+	Remove-Item -Path $buildDirectory -Force -Recurse
 }
-if (-Not(Test-Path $zipDirectory)) {
-  New-Item -ItemType directory -Path $zipDirectory
+if (Test-Path $zipDirectory) {
+	Remove-Item -Path $zipDirectory -Force -Recurse
 }
+	New-Item -ItemType directory -Path $buildDirectory
+	New-Item -ItemType directory -Path $zipDirectory
 
-
-$packageJsonPath    = $PSScriptRoot    + '\endpoints-collation-service\package.json'
-$serverJs           = $PSScriptRoot    + '\endpoints-collation-service\server.js'
-$startServerScriptPath   = $PSScriptRoot    + '\endpoints-collation-service\startServer.sh'
+$sourcefolder = $PSScriptRoot    + '\endpoints-collation-service'
 $deploymentYamlpath = $PSScriptRoot    + '\deployment.yaml'
 
-Copy-Item $packageJsonPath    $buildDirectory
-Copy-Item $serverJs           $buildDirectory
-Copy-Item $startServerScriptPath           $buildDirectory
-Copy-Item $deploymentYamlpath $buildDirectory
+
+$ExcludeExtentions = ".git", ".gitignore" 
+Get-ChildItem $sourcefolder -Recurse -Exclude $ExcludeExtentions | Copy-Item -Destination $buildDirectory 
+Copy-Item  $deploymentYamlpath $buildDirectory -Force
 
 $filename = 'Barossa-EndpointsCollationService.1.0.'+ $BuildVersion +'.0.zip'
 $zipfilepath= $zipDirectory + "\" + $filename;
 
 ZipFolder $buildDirectory  $zipfilepath
-
 } Catch {
-
  Write-Host "[e] FAILED: $_"
  $exitCode = 1
 
