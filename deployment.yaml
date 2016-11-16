@@ -56,19 +56,21 @@ parts:
         - value:
             - '#!/bin/sh'
             -
-            - 'yum update -y -q\n'
-            - 'yum install dos2unix gcc gcc-c++ -y -q\n'
+            - 'sudo yum update -y -q'
+            - 'sudo yum install dos2unix gcc gcc-c++ -y -q'
             - 'cat << EOF > /home/ec2-user/config.json'
             - '{'
-            - '"Endpoints": $(endpoints),'
-            - '"endpoint_response_failure_xpath": $(endpoint_response_failure_xpath),'
-            - '"status_check_failure_xpath": $(status_check_failure_xpath),'
-            - '"resource_check_failure_xpath:" $(resource_check_failure_xpath)'
+            - '"endpoints": $(endpoints),'
+            - '"endpoint_response_failure_xpath": "//results/result[@httpstatus!=200]",'
+            - '"status_check_failure_xpath": "//results/result/body/status/result[text()!='OK']",'
+            - '"resource_check_failure_xpath: "//results/result/body/status/resources/*[@result!='OK']"'
             - '}'
             - 'EOF'
+            - 'dos2unix /home/ec2-user/config.json /home/ec2-user/endpoints-collation-service/server.js /home/ec2-user/endpoints-collation-service/package.json /home/ec2-user/endpoints-collation-service/*.sh'
             - 'export PORT=$(endpoints-collation-service-port)'
             - 'export CONFIG_PATH=/home/ec2-user/config.json'
-            - 'sudo sh /home/ec2-user/endpoints-collation-service/startServer.sh'
+            - 'sudo chown ec2-user /var/log/barossa'
+            - 'sudo sh /home/ec2-user/endpoints-collation-service/startServer.sh /home/ec2-user/endpoints-collation-service forever /var/log/barossa'
           var: base64encoded-user-data
       templateBody:
         AWSTemplateFormatVersion: "2010-09-09"
