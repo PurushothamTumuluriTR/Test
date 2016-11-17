@@ -68,6 +68,7 @@ parts:
             - 'EOF'
             - 'dos2unix /home/ec2-user/config.json /home/ec2-user/endpoints-collation-service/server.js /home/ec2-user/endpoints-collation-service/package.json /home/ec2-user/endpoints-collation-service/*.sh'
             - 'sudo chown ec2-user /var/log/barossa'
+            - 'sudo sh /home/ec2-user/start-filebeat.sh --logstash osr$(infrastructure-environment)-logstash-elb'
             - 'sudo sh /home/ec2-user/endpoints-collation-service/startServer.sh /home/ec2-user/endpoints-collation-service forever /var/log/barossa $(endpoints-collation-service-port) /home/ec2-user/config.json'
           var: base64encoded-user-data
       templateBody:
@@ -142,6 +143,6 @@ parts:
           DashboardBoxes:
             Description: Dashboard boxes
             Value: '[{
-                      "check_command": "serviceStatusCheck!Endpoints Collation Service Version!http://$(endpoints-collation-service-hostname).$(sub-domain).$(root-domain):$(endpoints-collation-service-port)/result",
-                      "location": "$(instanceId)/Endpoints Collation Service/Resource Check"
+                      "check_command": "endpointCollationServiceCheck!Endpoints Collation Service Check!http://$(endpoints-collation-service-hostname).$(sub-domain).$(root-domain):$(endpoints-collation-service-port)/result",
+                      "location": "$(instanceId)/Endpoints Collation Service/Status Check"
                     }]'
