@@ -103,8 +103,8 @@ parts:
                   Value: $(environment)
                   PropagateAtLaunch: True
               VPCZoneIdentifier:
-                - $(private-subnet-a)
-                - $(private-subnet-b)
+                - $(endpoint-collation-service-subnet-1)
+                - $(endpoint-collation-service-subnet-2)
           HighCPUAlarm:
             Type: AWS::CloudWatch::Alarm
             Properties:
