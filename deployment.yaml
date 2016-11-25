@@ -77,7 +77,7 @@ parts:
           LaunchConfiguration:
             Type: AWS::AutoScaling::LaunchConfiguration
             Properties:
-              AssociatePublicIpAddress: False
+              AssociatePublicIpAddress: $(associate-public-ip-address)
               IamInstanceProfile: $(base-instance-profile)
               ImageId: $(endpoints-collation-service-ami)
               InstanceType: $(endpoints-collation-service-instance-type)
