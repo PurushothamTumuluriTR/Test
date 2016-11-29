@@ -30,6 +30,9 @@ parts:
                 FromPort: "$(prana-sidecar-port)"
                 ToPort: "$(prana-sidecar-port)"
                 CidrIp: "0.0.0.0/0"
+              Tags:
+                - Key: security-scan:ignore-public-ip
+                  Value: $(endpoint-collation-security-scan-ignore-public-ip)
         Outputs:
           SecurityGroupID:
             Description: ID of the created security group
