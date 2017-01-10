@@ -73,7 +73,7 @@ parts:
             - 'sudo chown ec2-user /var/log/barossa'
             - 'sudo sh /home/ec2-user/start-filebeat.sh --logstash osr$(infrastructure-environment)-logstash-elb'
             - 'sudo sh /home/ec2-user/endpoints-collation-service/startServer.sh /home/ec2-user/endpoints-collation-service forever /var/log/barossa $(endpoints-collation-service-port) /home/ec2-user/config.json'
-          var: base64encoded-user-data
+          var: base64encoded-endpoints-collation-user-data
       templateBody:
         AWSTemplateFormatVersion: "2010-09-09"
         Resources:
@@ -86,7 +86,7 @@ parts:
               InstanceType: $(endpoints-collation-service-instance-type)
               SecurityGroups:
                 - $(endpoints-collation-service-security-group)
-              UserData: $(base64encoded-user-data)
+              UserData: $(base64encoded-endpoints-collation-user-data)
           AutoScalingGroup:
             Type: AWS::AutoScaling::AutoScalingGroup
             Properties:
