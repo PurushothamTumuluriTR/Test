@@ -4,66 +4,99 @@ Param(
   $BuildVersion
 )
 
+$exitCode = 0
 
-#
-# Get endpoints-collation-service from SAMI-git.
-#
-function ZipFolder($sourcefolder, $zipfile) {
-	
-	# Check that the source folder exists.
-	If (!(Test-Path $sourcefolder)) {
-		Write-Host "[E] The output folder '$sourcefolder' was not found."
-		Exit 1
-	}
-	Write-Host "[i] zipping file '$sourcefolder' to '$zipfile'..."
-	[System.Reflection.Assembly]::LoadWithPartialName('System.IO.Compression.FileSystem')
-	[System.IO.Compression.ZipFile]::CreateFromDirectory($sourcefolder, $zipFile)
-}
 Try {
-$ErrorActionPreference = "Stop"
+  $ErrorActionPreference = "Stop"
 
-Write-Host ""
-Write-Host ""
-Write-Host "==> GRAB endpoints-collation-service"
-Write-Host ("=" * 80)
-Write-Host ""
+  if (Test-Path '.\endpoints-collation-service') {
+    Write-Host "[i] Updating existing endpoints-collation-service..."
+    Push-Location '.\endpoints-collation-service'
+    & git pull
+    Pop-Location
+  } else {
+    Write-Host "[i] Getting new endpoints-collation-service..."
+    & git clone https://git.sami.int.thomsonreuters.com/production-engineering/endpoints-collation-service
+  }
 
-if (Test-Path '.\endpoints-collation-service') {
-	Write-Host "==> Updating existing endpoints-collation-service..."
-	Push-Location '.\endpoints-collation-service'
-	& git pull
-	Pop-Location
-} else {
-	Write-Host "==> Getting new endpoints-collation-service..."
-	& git clone https://git.sami.int.thomsonreuters.com/production-engineering/endpoints-collation-service
-}
+  # node_modules contains very long paths which PowerShell cannot delete.
+  # We'll use rimraf to wipe them out.
+  Write-Host "[i] Installing rimraf..."
+  npm install rimraf -global
 
-$buildDirectory = $PSScriptRoot +"/Build"
-$zipDirectory = $PSScriptRoot +"/ZipFiles"
+  If( $LASTEXITCODE -ne 0 ) {
+    throw 'Failed to install rimraf.'
+  }
 
-if (Test-Path $buildDirectory) {
-	Remove-Item -Path $buildDirectory -Force -Recurse
-}
-if (Test-Path $zipDirectory) {
-	Remove-Item -Path $zipDirectory -Force -Recurse
-}
-	New-Item -ItemType directory -Path $buildDirectory
-	New-Item -ItemType directory -Path $zipDirectory
+  if (Test-Path '.\endpoints-collation-service\node_modules') {
+    Write-Host "[i] Deleting existing node_modules directory..."
+  	rimraf '.\endpoints-collation-service\node_modules'
 
-$sourcefolder = $PSScriptRoot    + '\endpoints-collation-service'
-$deploymentYamlpath = $PSScriptRoot    + '\deployment.yaml'
+    If( $LASTEXITCODE -ne 0 ) {
+      throw 'Failed to delete existing node_modules directory.'
+    }
+  }
 
+  if (Test-Path '.\endpoints-collation-service\dist') {
+    Write-Host '[i] Deleting existing distribution directory...'
+    rimraf '.\endpoints-collation-service\dist'
 
-$ExcludeExtentions = ".git", ".gitignore" 
-Get-ChildItem $sourcefolder -Recurse -Exclude $ExcludeExtentions | Copy-Item -Destination $buildDirectory 
-Copy-Item  $deploymentYamlpath $buildDirectory -Force
+    If( $LASTEXITCODE -ne 0 ) {
+      throw 'Failed to delete existing distribution directory.'
+    }
+  }
 
-$filename = 'Barossa-EndpointsCollationService.1.0.'+ $BuildVersion +'.0.zip'
-$zipfilepath= $zipDirectory + "\" + $filename;
+  Write-Host "[i] Installing gulp locally..."
+  npm install gulp
 
-ZipFolder $buildDirectory  $zipfilepath
+  If( $LASTEXITCODE -ne 0 ) {
+    throw 'Failed to install gulp locally.'
+  }
+
+  Write-Host "[i] Installing Endpoints Collation Service Node.JS modules..."
+  cd .\endpoints-collation-service
+  npm install
+
+  If( $LASTEXITCODE -ne 0 ) {
+    throw 'Failed to install Endpoints Collation Service Node.JS modules.'
+  }
+
+  Write-Host "[i] Building Endpoints Collation Service..."
+  gulp dist
+  cd ..
+
+  If( $LASTEXITCODE -ne 0 ) {
+    throw 'Failed to build Endpoints Collation Service.'
+  }
+
+  Write-Host '[i] Copying deployment.yaml to distribution...'
+  Copy-Item  '.\deployment.yaml' '.\endpoints-collation-service\dist'
+
+  $zip = ".\Barossa-EndpointsCollationService.1.0.$BuildVersion.0.zip"
+
+  if (Test-Path $zip) {
+    Write-Host "[i] Deleting existing ZIP..."
+  	rimraf $zip
+
+    If( $LASTEXITCODE -ne 0 ) {
+      throw 'Failed to delete existing ZIP.'
+    }
+  }
+
+  Write-Host '[i] Creating ZIP...'
+  [System.Reflection.Assembly]::LoadWithPartialName('System.IO.Compression.FileSystem')
+	[System.IO.Compression.ZipFile]::CreateFromDirectory('.\endpoints-collation-service\dist', $zip)
+
+  Write-Host '[i] Endpoints Collation Service built successfully.'
+
 } Catch {
- Write-Host "[e] FAILED: $_"
- $exitCode = 1
+
+  Write-Host "[e] FAILED: $_"
+  $exitCode = 1
+
+} Finally {
+
+  cd ..
+  Exit $exitCode
 
 }

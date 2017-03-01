@@ -2,17 +2,13 @@
 prerequisites:
   - base-instance-profile
 parts:
+
   - name: Endpoints Collation Service security group
     description: Creates the security group for the Endpoints Collation Service.
-    order: 1
-    warnBeforeDestroy: false
     handler: cloudformation
-    test:
-      stackName: $(instanceId)-$(endpoints-collation-service-hostname)-security-group
-      stackVersion: "1"
+    updateMethod: update
     task:
       stackName: $(instanceId)-$(endpoints-collation-service-hostname)-security-group
-      stackVersion: "1"
       templateBody:
         AWSTemplateFormatVersion: "2010-09-09"
         Resources:
@@ -25,10 +21,6 @@ parts:
               - IpProtocol: tcp
                 FromPort: "$(endpoints-collation-service-port)"
                 ToPort: "$(endpoints-collation-service-port)"
-                CidrIp: "0.0.0.0/0"
-              - IpProtocol: tcp
-                FromPort: "$(prana-sidecar-port)"
-                ToPort: "$(prana-sidecar-port)"
                 CidrIp: "0.0.0.0/0"
               Tags:
                 - Key: security-scan:ignore-public-ip
@@ -43,15 +35,10 @@ parts:
 
   - name: Endpoints Collation service instance
     description: Starts an instance of the Endpoints Collation service
-    order: 2
-    warnBeforeDestroy: false
     handler: cloudformation
-    test:
-      stackName: $(instanceId)-$(endpoints-collation-service-hostname)-ec2
-      stackVersion: $(endpoints-collation-service-version)
+    updateMethod: update
     task:
       stackName: $(instanceId)-$(endpoints-collation-service-hostname)-ec2
-      stackVersion: $(endpoints-collation-service-version)
       amiLookups:
         - name: endpoints-collation-service-$(endpoints-collation-service-version)
           var: endpoints-collation-service-ami
@@ -61,22 +48,78 @@ parts:
             -
             - 'sudo yum update -y -q'
             - 'sudo yum install dos2unix gcc gcc-c++ -y -q'
+
             - 'cat << EOF > /home/ec2-user/config.json'
             - '{'
-            - '"endpoints": $(endpoints),'
-            - '"endpoint_response_failure_xpath": "//results/result[@httpstatus!=200]",'
-            -  "\"status_check_failure_xpath\": \"//results/result/body/status/result[text()!='OK']\","
-            -  "\"resource_check_failure_xpath\": \"//results/result/body/status/resources/*[@result!='OK']\""
+            - '  "endpoints": $(endpoints),'
+            - '  "mustBeTrue": {'
+            - '    "status": ['
+            - '      200'
+            - '    ],'
+            - '    "body": ['
+            - '      "//status/result[text()='OK']"'
+            - '    ]'
+            - '  },'
+            - '  "mustBeFalse": {'
+            - '    "body": ['
+            - '      "//status/resources/*[@result!='OK']"'
+            - '    ]'
+            - '  }'
             - '}'
             - 'EOF'
-            - 'dos2unix /home/ec2-user/config.json /home/ec2-user/endpoints-collation-service/server.js /home/ec2-user/endpoints-collation-service/package.json /home/ec2-user/endpoints-collation-service/*.sh'
-            - 'sudo chown ec2-user /var/log/barossa'
-            - 'sudo sh /home/ec2-user/start-filebeat.sh --logstash osr$(infrastructure-environment)-logstash-elb'
-            - 'sudo sh /home/ec2-user/endpoints-collation-service/startServer.sh /home/ec2-user/endpoints-collation-service forever /var/log/barossa $(endpoints-collation-service-port) /home/ec2-user/config.json'
+
+            - cd /home/ec2-user/endpoints-collation-service/
+            - npm install
+
+            - dos2unix /home/ec2-user/config.json /home/ec2-user/endpoints-collation-service/server.js /home/ec2-user/endpoints-collation-service/package.json
+            - sudo chown ec2-user /var/log/barossa
+
+            - sudo sh /home/ec2-user/start-filebeat.sh --logstash osr$(infrastructure-environment)-logstash-elb
+
+            - export PORT=8080
+            - export CONFIG_PATH=/home/ec2-user/config.json
+            - export DEPLOYED_VERSION=$(endpoints-collation-service-version)
+            - export DEPLOYED_ENVIRONMENT=$(instanceId)
+            - forever start -a -l /var/log/barossa/forever.log -o /var/log/barossa/app.log -e /var/log/barossa/error.log /home/ec2-user/endpoints-collation-service/server.js
+
           var: base64encoded-endpoints-collation-user-data
       templateBody:
         AWSTemplateFormatVersion: "2010-09-09"
         Resources:
+          ElasticLoadBalancerSecurityGroup:
+            Type: AWS::EC2::SecurityGroup
+            Properties:
+              GroupDescription: $(instanceId)-$(endpoints-collation-service-hostname)-elb-security-group
+              VpcId: $(vpc)
+              SecurityGroupIngress:
+              - IpProtocol: tcp
+                FromPort: "80"
+                ToPort: "80"
+                CidrIp: "0.0.0.0/0"
+          ElasticLoadBalancer:
+            Type: AWS::ElasticLoadBalancing::LoadBalancer
+            Properties:
+              CrossZone: True
+              HealthCheck:
+                HealthyThreshold: 2
+                Interval: 10
+                Target: HTTP:$(endpoints-collation-service-port)/result
+                Timeout: 2
+                UnhealthyThreshold: 2
+              Listeners:
+                - InstancePort: "$(endpoints-collation-service-port)"
+                  InstanceProtocol: HTTP
+                  LoadBalancerPort: "80"
+                  Protocol: HTTP
+              Scheme: $(endpoint-collation-load-balancer-scheme)
+              SecurityGroups:
+                - Ref: ElasticLoadBalancerSecurityGroup
+              Subnets:
+                - $(private-subnet-a)
+                - $(private-subnet-b)
+              Tags:
+                - Key: DomainNames
+                  Value: $(endpoints-collation-service-hostname).$(sub-domain).+
           LaunchConfiguration:
             Type: AWS::AutoScaling::LaunchConfiguration
             Properties:
@@ -93,12 +136,11 @@ parts:
               DesiredCapacity: "1"
               LaunchConfigurationName:
                 Ref: LaunchConfiguration
+              LoadBalancerNames:
+                - Ref: ElasticLoadBalancer
               MaxSize: "1"
               MinSize: "1"
               Tags:
-                - Key: DomainNames
-                  Value: $(endpoints-collation-service-hostname).$(sub-domain).*
-                  PropagateAtLaunch: True
                 - Key: Name
                   Value: $(endpoints-collation-service-hostname)
                   PropagateAtLaunch: True
@@ -143,9 +185,25 @@ parts:
                     Ref: AutoScalingGroup
               ComparisonOperator: LessThanThreshold
         Outputs:
+          AutoScalingGroupID:
+            Description: Auto-Scaling Group
+            Value:
+              Ref: AutoScalingGroup
           DashboardBoxes:
             Description: Dashboard boxes
             Value: '[{
-                      "check_command": "endpointCollationServiceCheck!Endpoints Collation Service Check!http://$(endpoints-collation-service-hostname).$(sub-domain).$(root-domain):$(endpoints-collation-service-port)/result",
+                      "check_command": "endpointCollationServiceCheck!Endpoints Collation Service Check!http://$(endpoints-collation-service-hostname).$(sub-domain).$(root-domain)/result",
                       "location": "$(instanceId)/Endpoints Collation Service/Status Check"
                     }]'
+      templateOutputs:
+        AutoScalingGroupID: endpoints-collation-auto-scaling-group
+
+  - name: Endpoints Collation auto-scaling group concertina
+    description: Refreshes the ASG to ensure the latest AMI is instantiated
+    handler: asg-concertina
+    test:
+      lastLaunchConfigurationAction: $($(instanceId)-$(endpoints-collation-service-hostname)-ec2-LaunchConfiguration-action)
+    task:
+      autoScalingGroup: $(endpoints-collation-auto-scaling-group)
+      instanceCheckPort: $(endpoints-collation-service-port)
+      instanceCheckRoute: /result
