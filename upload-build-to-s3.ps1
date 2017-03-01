@@ -46,5 +46,5 @@ Write-Host "[i] AWS_SECRET_ACCESS_KEY ="  $(Mask-Key  $awsSecretAccessKey)
 $service_bucket = Get-ServiceBuildsBucket
 
 Write-Host " * Uploading..."
-Write-S3Object -BucketName $service_bucket -SearchPattern Barossa-EndpointsCollationService.*.zip -KeyPrefix endpoints-collation-service -Folder ZipFiles
+Write-S3Object -BucketName $service_bucket -SearchPattern Barossa-EndpointsCollationService.*.zip -KeyPrefix endpoints-collation-service -Folder .
 Write-Host "Done."
