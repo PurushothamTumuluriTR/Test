@@ -47,7 +47,6 @@ parts:
             - '#!/bin/sh'
             -
             - 'sudo yum update -y -q'
-            - 'sudo yum install dos2unix gcc gcc-c++ -y -q'
 
             - 'cat << EOF > /home/ec2-user/config.json'
             - '{'
@@ -71,7 +70,6 @@ parts:
             - cd /home/ec2-user/endpoints-collation-service/
             - npm install
 
-            - dos2unix /home/ec2-user/config.json /home/ec2-user/endpoints-collation-service/server.js /home/ec2-user/endpoints-collation-service/package.json
             - sudo chown ec2-user /var/log/barossa
 
             - sudo sh /home/ec2-user/start-filebeat.sh --logstash osr$(infrastructure-environment)-logstash-elb
@@ -80,7 +78,7 @@ parts:
             - export CONFIG_PATH=/home/ec2-user/config.json
             - export DEPLOYED_VERSION=$(endpoints-collation-service-version)
             - export DEPLOYED_ENVIRONMENT=$(instanceId)
-            - forever start -a -l /var/log/barossa/forever.log -o /var/log/barossa/app.log -e /var/log/barossa/error.log /home/ec2-user/endpoints-collation-service/server.js
+            - forever start -a -l /var/log/barossa/forever.log -o /var/log/barossa/app.log -e /var/log/barossa/error.log /home/ec2-user/endpoints-collation-service/src/server.js
 
           var: base64encoded-endpoints-collation-user-data
       templateBody:
