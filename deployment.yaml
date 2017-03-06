@@ -113,15 +113,15 @@ parts:
               SecurityGroups:
                 - Ref: ElasticLoadBalancerSecurityGroup
               Subnets:
-                - $(private-subnet-a)
-                - $(private-subnet-b)
+                - $(endpoint-collation-load-balancer-subnet-1)
+                - $(endpoint-collation-load-balancer-subnet-2)
               Tags:
                 - Key: DomainNames
                   Value: $(endpoints-collation-service-hostname).$(sub-domain).+
           LaunchConfiguration:
             Type: AWS::AutoScaling::LaunchConfiguration
             Properties:
-              AssociatePublicIpAddress: $(associate-public-ip-address)
+              AssociatePublicIpAddress: False
               IamInstanceProfile: $(base-instance-profile)
               ImageId: $(endpoints-collation-service-ami)
               InstanceType: $(endpoints-collation-service-instance-type)
@@ -146,8 +146,8 @@ parts:
                   Value: $(environment)
                   PropagateAtLaunch: True
               VPCZoneIdentifier:
-                - $(endpoint-collation-service-subnet-1)
-                - $(endpoint-collation-service-subnet-2)
+                - $(private-subnet-a)
+                - $(private-subnet-b)
           HighCPUAlarm:
             Type: AWS::CloudWatch::Alarm
             Properties:
