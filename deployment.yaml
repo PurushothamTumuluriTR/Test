@@ -1,7 +1,6 @@
 ﻿description: Endpoints Collation Service
 prerequisites:
   - base-instance-profile
-  - direct-to-reverse-proxy
 parts:
 
   - name: Endpoints Collation Service security group
@@ -134,7 +133,6 @@ parts:
               InstanceType: $(endpoints-collation-service-instance-type)
               SecurityGroups:
                 - $(endpoints-collation-service-security-group)
-                - $(direct-to-reverse-proxy-security-group)
               UserData: $(base64encoded-endpoints-collation-user-data)
           AutoScalingGroup:
             Type: AWS::AutoScaling::AutoScalingGroup
