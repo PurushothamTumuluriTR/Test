@@ -78,7 +78,8 @@ parts:
 
             - sudo chown ec2-user /var/log/barossa
 
-            - sudo sh /home/ec2-user/start-filebeat.sh --logstash osr$(infrastructure-environment)-logstash-elb
+            - sudo sh /home/ec2-user/start-filebeat.sh --logstash $(logstash-name)
+            - sudo sh /home/ec2-user/start-datadog-agent.sh --apikey $(data-dog-api-key)
 
             - export PORT=8080
             - export CONFIG_PATH=/home/ec2-user/config.json
