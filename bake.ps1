@@ -48,6 +48,8 @@ $bakerServicePort       = "8080"
 
 $bakeTimeout            = ( New-Timespan -Minutes 60 )
 
+$localBakerTunnelPort   = 9113
+
 $files = @{
   "packer.json"         = "packer.json";
 }
@@ -130,6 +132,8 @@ Try {
               -BakeAMIVersion             $BuildVersion `
               -Timeout                    $bakeTimeout `
               -ExtraArgs                  $extraArgs `
+              -TunnelLocalPort            $localBakerTunnelPort `
+
 } Catch {
 
   Write-Host "[e] FAILED: $_"
