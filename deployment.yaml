@@ -118,7 +118,7 @@ parts:
               ImageId: $(endpoints-collation-service-ami)
               InstanceType: $(endpoints-collation-service-instance-type)
               SecurityGroups:
-                - $(endpoints-collation-service-security-group)
+                - Ref: SecurityGroup
               UserData: $(base64encoded-endpoints-collation-user-data)
           AutoScalingGroup:
             Type: AWS::AutoScaling::AutoScalingGroup
