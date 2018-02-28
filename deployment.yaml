@@ -3,42 +3,12 @@ prerequisites:
   - base-instance-profile
 parts:
 
-  - name: Endpoints Collation Service security group
-    description: Creates the security group for the Endpoints Collation Service.
-    handler: cloudformation
-    updateMethod: update
-    task:
-      stackName: $(instanceId)-$(endpoints-collation-service-hostname)-security-group
-      templateBody:
-        AWSTemplateFormatVersion: "2010-09-09"
-        Resources:
-          SecurityGroup:
-            Type: AWS::EC2::SecurityGroup
-            Properties:
-              GroupDescription: $(instanceId)-$(endpoints-collation-service-hostname)-security-group
-              VpcId: $(vpc)
-              SecurityGroupIngress:
-              - IpProtocol: tcp
-                FromPort: "$(endpoints-collation-service-port)"
-                ToPort: "$(endpoints-collation-service-port)"
-                CidrIp: "0.0.0.0/0"
-              Tags:
-                - Key: security-scan:ignore-public-ip
-                  Value: $(endpoint-collation-security-scan-ignore-public-ip)
-        Outputs:
-          SecurityGroupID:
-            Description: ID of the created security group
-            Value:
-              Ref: SecurityGroup
-      templateOutputs:
-        SecurityGroupID: endpoints-collation-service-security-group
-
   - name: Endpoints Collation service instance
     description: Starts an instance of the Endpoints Collation service
     handler: cloudformation
     updateMethod: update
     task:
-      stackName: $(instanceId)-$(endpoints-collation-service-hostname)-ec2
+      stackName: $(endpoints-collation-stack-name)
       amiLookups:
         - name: endpoints-collation-service-$(endpoints-collation-service-version)
           var: endpoints-collation-service-ami
@@ -86,15 +56,30 @@ parts:
             - export DEPLOYED_VERSION=$(endpoints-collation-service-version)
             - export DEPLOYED_ENVIRONMENT=$(instanceId)
             - forever start -a -l /var/log/barossa/forever.log -o /var/log/barossa/app.log -e /var/log/barossa/error.log /home/ec2-user/endpoints-collation-service/src/server.js
+            - sudo python3 /opt/common/wait_and_signal_success.py/wait_and_signal_success.py --stack $(endpoints-collation-stack-name) --resource AutoScalingGroup --region $(region) --port $(endpoints-collation-service-port) --endpoint statuscheck
 
           var: base64encoded-endpoints-collation-user-data
       templateBody:
         AWSTemplateFormatVersion: "2010-09-09"
         Resources:
+          SecurityGroup:
+            Type: AWS::EC2::SecurityGroup
+            Properties:
+              GroupDescription: $(endpoints-collation-stack-name)-security-group
+              VpcId: $(vpc)
+              SecurityGroupIngress:
+                - IpProtocol: tcp
+                  FromPort: "$(endpoints-collation-service-port)"
+                  ToPort: "$(endpoints-collation-service-port)"
+                  CidrIp: "0.0.0.0/0"
+              Tags:
+                - Key: security-scan:ignore-public-ip
+                  Value: $(endpoint-collation-security-scan-ignore-public-ip)
+
           ElasticLoadBalancerSecurityGroup:
             Type: AWS::EC2::SecurityGroup
             Properties:
-              GroupDescription: $(instanceId)-$(endpoints-collation-service-hostname)-elb-security-group
+              GroupDescription: $(endpoints-collation-stack-name)-elb-security-group
               VpcId: $(vpc)
               SecurityGroupIngress:
               - IpProtocol: tcp
@@ -138,13 +123,13 @@ parts:
           AutoScalingGroup:
             Type: AWS::AutoScaling::AutoScalingGroup
             Properties:
-              DesiredCapacity: "1"
+              DesiredCapacity: "$(endpoints-collation-scaling-desired)"
               LaunchConfigurationName:
                 Ref: LaunchConfiguration
               LoadBalancerNames:
                 - Ref: ElasticLoadBalancer
-              MaxSize: "1"
-              MinSize: "1"
+              MaxSize: "$(endpoints-collation-scaling-max)"
+              MinSize: "$(endpoints-collation-scaling-desired)"
               Tags:
                 - Key: Name
                   Value: $(endpoints-collation-service-hostname)
@@ -155,6 +140,15 @@ parts:
               VPCZoneIdentifier:
                 - $(private-subnet-a)
                 - $(private-subnet-b)
+            UpdatePolicy:
+              AutoScalingRollingUpdate:
+                MinInstancesInService: $(endpoints-collation-min-instances-in-service)
+                MaxBatchSize: $(endpoints-collation-scaling-max-batch-size)
+                PauseTime: PT20M
+                SuspendProcesses:
+                  - AlarmNotification
+                WaitOnResourceSignals: true
+
           HighCPUAlarm:
             Type: AWS::CloudWatch::Alarm
             Properties:
@@ -190,25 +184,17 @@ parts:
                     Ref: AutoScalingGroup
               ComparisonOperator: LessThanThreshold
         Outputs:
-          AutoScalingGroupID:
-            Description: Auto-Scaling Group
-            Value:
-              Ref: AutoScalingGroup
           DashboardBoxes:
             Description: Dashboard boxes
             Value: '[{
                       "check_command": "endpointCollationServiceCheck!Endpoints Collation Service Check!http://$(endpoints-collation-service-hostname).$(sub-domain).$(root-domain)/result",
                       "location": "$(instanceId)/Endpoints Collation Service/Status Check"
+                    },
+                    {
+                      "check_command": "serviceVersionInfo!Endpoints Collation Service Version!http://$(endpoints-collation-service-hostname).$(sub-domain).$(root-domain):$(endpoints-collation-service-port)/versioncheck",
+                      "location": "$(instanceId)/Endpoints Collation Service/Version"
+                    },
+                    {
+                      "check_command": "serviceStatusCheck!Endpoints Collation Service Status Check!http://$(endpoints-collation-service-hostname).$(sub-domain).$(root-domain):$(endpoints-collation-service-port)/statuscheck",
+                      "location": "$(instanceId)/Endpoints Collation Service/Status Check"
                     }]'
-      templateOutputs:
-        AutoScalingGroupID: endpoints-collation-auto-scaling-group
-
-  - name: Endpoints Collation auto-scaling group concertina
-    description: Refreshes the ASG to ensure the latest AMI is instantiated
-    handler: asg-concertina
-    test:
-      lastLaunchConfigurationAction: $($(instanceId)-$(endpoints-collation-service-hostname)-ec2-LaunchConfiguration-action)
-    task:
-      autoScalingGroup: $(endpoints-collation-auto-scaling-group)
-      instanceCheckPort: $(endpoints-collation-service-port)
-      instanceCheckRoute: /result
