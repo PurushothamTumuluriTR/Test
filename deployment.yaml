@@ -56,7 +56,7 @@ parts:
             - export DEPLOYED_VERSION=$(endpoints-collation-service-version)
             - export DEPLOYED_ENVIRONMENT=$(instanceId)
             - forever start -a -l /var/log/barossa/forever.log -o /var/log/barossa/app.log -e /var/log/barossa/error.log /home/ec2-user/endpoints-collation-service/src/server.js
-            - sudo python3 /opt/common/wait_and_signal_success.py/wait_and_signal_success.py --stack $(endpoints-collation-stack-name) --resource AutoScalingGroup --region $(region) --port $(endpoints-collation-service-port) --endpoint statuscheck
+            - sudo python3 /opt/common/wait_and_signal_success.py --stack $(endpoints-collation-stack-name) --resource AutoScalingGroup --region $(region) --port $(endpoints-collation-service-port) --endpoint statuscheck
 
           var: base64encoded-endpoints-collation-user-data
       templateBody:
