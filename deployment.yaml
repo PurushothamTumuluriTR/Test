@@ -129,6 +129,8 @@ parts:
               LoadBalancerNames:
                 - Ref: ElasticLoadBalancer
               MaxSize: "$(endpoints-collation-scaling-max)"
+              MetricsCollection:
+                - Granularity: 1Minute
               MinSize: "$(endpoints-collation-scaling-desired)"
               Tags:
                 - Key: Name
