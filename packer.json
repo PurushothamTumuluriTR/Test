@@ -29,7 +29,7 @@
     "inline": [
       "sudo yum update --assumeyes --quiet",
       "cd /home/ec2-user/",
-      "sudo /home/ec2-user/setup-logrotate-copytruncate.sh",
+      "sudo sh /home/ec2-user/setup-logrotate-copytruncate.sh",
       "aws s3 cp s3://{{user `service_builds_bucket`}}/endpoints-collation-service/Barossa-EndpointsCollationService.1.0.{{user `build_version`}}.0.zip service.zip",
       "mkdir endpoints-collation-service",
       "unzip service.zip -d endpoints-collation-service || true",
