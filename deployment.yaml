@@ -71,10 +71,7 @@ parts:
                 - IpProtocol: tcp
                   FromPort: "$(endpoints-collation-service-port)"
                   ToPort: "$(endpoints-collation-service-port)"
-                  CidrIp: "0.0.0.0/0"
-              Tags:
-                - Key: security-scan:ignore-public-ip
-                  Value: $(endpoint-collation-security-scan-ignore-public-ip)
+                  CidrIp: "10.0.0.0/8"
 
           ElasticLoadBalancerSecurityGroup:
             Type: AWS::EC2::SecurityGroup
