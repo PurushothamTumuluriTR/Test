@@ -12,6 +12,10 @@ parts:
       amiLookups:
         - name: endpoints-collation-service-$(endpoints-collation-service-version)
           var: endpoints-collation-service-ami
+      certificateLookups:
+        - name: $(endpoint-collation-elb-certificate-domain)
+          var: endpoint-collation-elb-cert-arn
+
       base64Encode:
         - value:
             - '#!/bin/sh'
@@ -61,6 +65,10 @@ parts:
           var: base64encoded-endpoints-collation-user-data
       templateBody:
         AWSTemplateFormatVersion: "2010-09-09"
+        Conditions:
+          IsHttps:
+            Fn::Equals: [ $(endpoints-collation-elb-type), HTTPS ]
+             
         Resources:
           SecurityGroup:
             Type: AWS::EC2::SecurityGroup
@@ -80,8 +88,10 @@ parts:
               VpcId: $(vpc)
               SecurityGroupIngress:
               - IpProtocol: tcp
-                FromPort: "80"
-                ToPort: "80"
+                FromPort: 
+                  - Fn::If: [ IsHttps, 443, 80 ]
+                ToPort:
+                  - Fn::If: [ IsHttps, 443, 80 ]
                 CidrIp: "0.0.0.0/0"
           ElasticLoadBalancer:
             Type: AWS::ElasticLoadBalancing::LoadBalancer
@@ -93,11 +103,23 @@ parts:
                 Target: HTTP:$(endpoints-collation-service-port)/result
                 Timeout: 2
                 UnhealthyThreshold: 2
+              Policies:
+                PolicyName: EndpointCollationELBSecurityPolicy
+                PolicyType: SSLNegotiationPolicyType
+                Attributes:
+                  - 
+                    "Name" : TLS-Protocol
+                    "Value" : ELBSecurityPolicy-TLS-1-2-2017-01
               Listeners:
                 - InstancePort: "$(endpoints-collation-service-port)"
                   InstanceProtocol: HTTP
-                  LoadBalancerPort: "80"
-                  Protocol: HTTP
+                  LoadBalancerPort:
+                    - Fn::If: [ IsHttps, 443, 80 ]
+                  Protocol:
+                    - Fn::If: [ IsHttps, HTTPS, HTTP ]
+                  Condition: IsHttps
+                  SSLCertificateId:
+                    - $(endpoint-collation-elb-cert-arn)
               Scheme: $(endpoint-collation-load-balancer-scheme)
               SecurityGroups:
                 - Ref: ElasticLoadBalancerSecurityGroup
