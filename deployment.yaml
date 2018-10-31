@@ -104,7 +104,8 @@ parts:
                 Timeout: 2
                 UnhealthyThreshold: 2
               Policies:
-                - PolicyName: EndpointCollationELBSecurityPolicy
+                - 
+                  PolicyName: EndpointCollationELBSecurityPolicy
                   PolicyType: SSLNegotiationPolicyType
                   Attributes:
                     - 
