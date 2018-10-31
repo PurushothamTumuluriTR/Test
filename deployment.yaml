@@ -109,7 +109,7 @@ parts:
                   PolicyType: SSLNegotiationPolicyType
                   Attributes:
                     - 
-                      "Name" : TLS-Protocol
+                      "Name" : Reference-Security-Policy
                       "Value" : ELBSecurityPolicy-TLS-1-2-2017-01
               Listeners:
                 - InstancePort: "$(endpoints-collation-service-port)"
