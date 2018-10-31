@@ -104,12 +104,12 @@ parts:
                 Timeout: 2
                 UnhealthyThreshold: 2
               Policies:
-                PolicyName: EndpointCollationELBSecurityPolicy
-                PolicyType: SSLNegotiationPolicyType
-                Attributes:
-                  - 
-                    "Name" : TLS-Protocol
-                    "Value" : ELBSecurityPolicy-TLS-1-2-2017-01
+                - PolicyName: EndpointCollationELBSecurityPolicy
+                  PolicyType: SSLNegotiationPolicyType
+                  Attributes:
+                    - 
+                      "Name" : TLS-Protocol
+                      "Value" : ELBSecurityPolicy-TLS-1-2-2017-01
               Listeners:
                 - InstancePort: "$(endpoints-collation-service-port)"
                   InstanceProtocol: HTTP
