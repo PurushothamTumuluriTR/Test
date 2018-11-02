@@ -13,8 +13,8 @@ parts:
         - name: endpoints-collation-service-$(endpoints-collation-service-version)
           var: endpoints-collation-service-ami
       certificateLookups:
-        - name: $(endpoint-collation-elb-certificate-domain)
-          var: endpoint-collation-elb-cert-arn
+        - name: $(endpoints-collation-elb-certificate-domain)
+          var: endpoints-collation-elb-cert-arn
 
       base64Encode:
         - value:
@@ -120,7 +120,7 @@ parts:
                     - Fn::If: [ IsHttps, HTTPS, HTTP ]
                   Condition: IsHttps
                   SSLCertificateId:
-                    - $(endpoint-collation-elb-cert-arn)
+                    - $(endpoints-collation-elb-cert-arn)
               Scheme: $(endpoint-collation-load-balancer-scheme)
               SecurityGroups:
                 - Ref: ElasticLoadBalancerSecurityGroup
