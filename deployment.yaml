@@ -89,9 +89,9 @@ parts:
               SecurityGroupIngress:
               - IpProtocol: tcp
                 FromPort: 
-                  - Fn::If: [ IsHttps, 443, 80 ]
+                  Fn::If: [ IsHttps, "443", "80" ]
                 ToPort:
-                  - Fn::If: [ IsHttps, 443, 80 ]
+                  Fn::If: [ IsHttps, "443", "80" ]
                 CidrIp: "0.0.0.0/0"
           ElasticLoadBalancer:
             Type: AWS::ElasticLoadBalancing::LoadBalancer
@@ -115,9 +115,9 @@ parts:
                 - InstancePort: "$(endpoints-collation-service-port)"
                   InstanceProtocol: HTTP
                   LoadBalancerPort:
-                    - Fn::If: [ IsHttps, 443, 80 ]
+                    Fn::If: [ IsHttps, "443", "80" ]
                   Protocol:
-                    - Fn::If: [ IsHttps, HTTPS, HTTP ]
+                    Fn::If: [ IsHttps, "HTTPS", "HTTP" ]
                   Condition: IsHttps
                   SSLCertificateId:
                     - $(endpoints-collation-elb-cert-arn)
