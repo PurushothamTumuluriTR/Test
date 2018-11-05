@@ -118,9 +118,8 @@ parts:
                     Fn::If: [ IsHttps, "443", "80" ]
                   Protocol:
                     Fn::If: [ IsHttps, "HTTPS", "HTTP" ]
-                  Condition: IsHttps
                   SSLCertificateId:
-                    - $(endpoints-collation-elb-cert-arn)
+                    Fn::If: [ IsHttps, $(endpoints-collation-elb-cert-arn), "AWS::NoValue"]
               Scheme: $(endpoint-collation-load-balancer-scheme)
               SecurityGroups:
                 - Ref: ElasticLoadBalancerSecurityGroup
