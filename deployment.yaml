@@ -207,14 +207,14 @@ parts:
           DashboardBoxes:
             Description: Dashboard boxes
             Value: '[{
-                      "check_command": "endpointCollationServiceCheck!Endpoints Collation Service Check!http://$(endpoints-collation-service-hostname).$(sub-domain).$(root-domain)/result",
+                      "check_command": "endpointCollationServiceCheck!Endpoints Collation Service Check!$(endpoints-collation-url)/result",
                       "location": "$(instanceId)/Endpoints Collation Service/Status Check/RESULT"
                     },
                     {
-                      "check_command": "serviceVersionInfo!Endpoints Collation Service Version!http://$(endpoints-collation-service-hostname).$(sub-domain).$(root-domain)/versioncheck",
+                      "check_command": "serviceVersionInfo!Endpoints Collation Service Version!$(endpoints-collation-url)/versioncheck",
                       "location": "$(instanceId)/Endpoints Collation Service/Version"
                     },
                     {
-                      "check_command": "serviceStatusCheck!Endpoints Collation Service Status Check!http://$(endpoints-collation-service-hostname).$(sub-domain).$(root-domain)/statuscheck",
+                      "check_command": "serviceStatusCheck!Endpoints Collation Service Status Check!$(endpoints-collation-url)/statuscheck",
                       "location": "$(instanceId)/Endpoints Collation Service/Status Check/STATUS"
                     }]'
