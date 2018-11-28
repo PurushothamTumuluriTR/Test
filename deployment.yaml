@@ -67,6 +67,9 @@ parts:
         Conditions:
           IsHttps:
             Fn::Equals: [ $(endpoints-collation-elb-type), HTTPS ]
+          IsHttp:
+            Fn::Equals: [ $(endpoints-collation-elb-type), HTTP ]
+          
              
         Resources:
           SecurityGroup:
@@ -92,7 +95,8 @@ parts:
                 ToPort:
                   Fn::If: [ IsHttps, "443", "80" ]
                 CidrIp: "0.0.0.0/0"
-          ElasticLoadBalancer:
+          HttpsElasticLoadBalancer:
+            Condition: IsHttps
             Type: AWS::ElasticLoadBalancing::LoadBalancer
             Properties:
               CrossZone: True
@@ -113,15 +117,36 @@ parts:
               Listeners:
                 - InstancePort: "$(endpoints-collation-service-port)"
                   InstanceProtocol: HTTP
-                  LoadBalancerPort:
-                    Fn::If: [ IsHttps, "443", "80" ]
-                  Protocol:
-                    Fn::If: [ IsHttps, "HTTPS", "HTTP" ]
-                  SSLCertificateId:
-                    Fn::If: [ IsHttps, $(endpoints-collation-elb-cert-arn), "AWS::NoValue"]
+                  LoadBalancerPort: 443
+                  Protocol: HTTPS
+                  SSLCertificateId: $(endpoints-collation-elb-cert-arn)
                   PolicyNames:
-                    - 
-                      Fn::If: [ IsHttps, EndpointCollationELBSecurityPolicy, "AWS::NoValue"]
+                    - EndpointCollationELBSecurityPolicy
+              Scheme: $(endpoint-collation-load-balancer-scheme)
+              SecurityGroups:
+                - Ref: ElasticLoadBalancerSecurityGroup
+              Subnets:
+                - $(endpoint-collation-load-balancer-subnet-1)
+                - $(endpoint-collation-load-balancer-subnet-2)
+              Tags:
+                - Key: DomainNames
+                  Value: $(endpoints-collation-service-hostname).$(sub-domain).+
+          HttpElasticLoadBalancer:
+            Condition: IsHttp
+            Type: AWS::ElasticLoadBalancing::LoadBalancer
+            Properties:
+              CrossZone: True
+              HealthCheck:
+                HealthyThreshold: 2
+                Interval: 10
+                Target: HTTP:$(endpoints-collation-service-port)/result
+                Timeout: 2
+                UnhealthyThreshold: 2
+              Listeners:
+                - InstancePort: "$(endpoints-collation-service-port)"
+                  InstanceProtocol: HTTP
+                  LoadBalancerPort: 80
+                  Protocol: HTTP
               Scheme: $(endpoint-collation-load-balancer-scheme)
               SecurityGroups:
                 - Ref: ElasticLoadBalancerSecurityGroup
@@ -148,7 +173,10 @@ parts:
               LaunchConfigurationName:
                 Ref: LaunchConfiguration
               LoadBalancerNames:
-                - Ref: ElasticLoadBalancer
+                - Fn::If:
+                  - IsHttps
+                  - Ref: HttpsElasticLoadBalancer
+                  - Ref: HttpElasticLoadBalancer
               MaxSize: "$(endpoints-collation-scaling-max)"
               MetricsCollection:
                 - Granularity: 1Minute
