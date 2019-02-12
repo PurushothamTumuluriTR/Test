@@ -1,7 +1,10 @@
 Param(
   [string]
   [Parameter(Mandatory = $true)]
-  $BuildVersion
+  $BuildVersion,
+  [string]
+  [Parameter(Mandatory = $true)]
+  $CommitId
 )
 
 $exitCode = 0
@@ -72,11 +75,13 @@ Try {
   Write-Host '[i] Copying deployment.yaml to distribution...'
   Copy-Item  '.\deployment.yaml' '.\endpoints-collation-service\dist'
 
-  $zip = ".\Barossa-EndpointsCollationService.1.0.$BuildVersion.0.zip"
+  $buildZip = ".\Barossa-EndpointsCollationService.1.0.$BuildVersion.0.zip"
+  $commitZip = ".\endpoints-collation-service.$CommitId.zip"
 
-  if (Test-Path $zip) {
+  if (Test-Path $buildZip -or Test-Path $commitZip ) {
     Write-Host "[i] Deleting existing ZIP..."
-  	rimraf $zip
+  	rimraf $buildZip
+  	rimraf $commitZip
 
     If( $LASTEXITCODE -ne 0 ) {
       throw 'Failed to delete existing ZIP.'
@@ -85,7 +90,8 @@ Try {
 
   Write-Host '[i] Creating ZIP...'
   [System.Reflection.Assembly]::LoadWithPartialName('System.IO.Compression.FileSystem')
-	[System.IO.Compression.ZipFile]::CreateFromDirectory('.\endpoints-collation-service\dist', $zip)
+  [System.IO.Compression.ZipFile]::CreateFromDirectory('.\endpoints-collation-service\dist', $BuildZip)
+  [System.IO.Compression.ZipFile]::CreateFromDirectory('.\endpoints-collation-service\dist', $CommitZip)
 
   Write-Host '[i] Endpoints Collation Service built successfully.'
 
@@ -98,5 +104,4 @@ Try {
 
   cd ..
   Exit $exitCode
-
 }

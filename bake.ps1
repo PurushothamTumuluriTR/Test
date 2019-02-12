@@ -7,13 +7,6 @@ Param(
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = "Stop"
 
-Write-Host "SOFTWARE SETUP"
-Write-Host "[i] Removing old infrastructure-scripts..."
-Remove-Item -Force -Path infrastructure-scripts -ErrorAction Ignore -Recurse
-
-Write-Host "[i] Grabbing infrastructure-scripts..."
-git clone --depth=1 https://git.sami.int.thomsonreuters.com/production-engineering/infrastructure-scripts.git
-
 Import-Module ".\infrastructure-scripts\private\powershell\Aws.psm1" -Force
 Import-Module ".\infrastructure-scripts\private\powershell\Logging.psm1" -Force
 Import-Module ".\infrastructure-scripts\private\powershell\Http.psm1" -Force
