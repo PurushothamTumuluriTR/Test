@@ -78,9 +78,17 @@ Try {
   $buildZip = ".\Barossa-EndpointsCollationService.1.0.$BuildVersion.0.zip"
   $commitZip = ".\endpoints-collation-service.$CommitId.zip"
 
-  if (Test-Path $buildZip -or Test-Path $commitZip ) {
+  if (Test-Path $buildZip) {
     Write-Host "[i] Deleting existing ZIP..."
   	rimraf $buildZip
+
+    If( $LASTEXITCODE -ne 0 ) {
+      throw 'Failed to delete existing ZIP.'
+    }
+  }
+  
+  if (Test-Path $commitZip ) {
+    Write-Host "[i] Deleting existing ZIP..."
   	rimraf $commitZip
 
     If( $LASTEXITCODE -ne 0 ) {
