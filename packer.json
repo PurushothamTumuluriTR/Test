@@ -11,20 +11,25 @@
     "service_builds_bucket": "",
     "ami_users": ""
   },
-  "builders": [{
-    "type": "amazon-ebs",
-    "ami_name": "endpoints-collation-service-{{user `build_version`}}",
-    "region": "{{user `aws_region`}}",
-    "source_ami": "{{user `ami`}}",
-    "instance_type": "{{user `instance_type`}}",
-    "associate_public_ip_address": false,
-    "ssh_username": "{{user `user`}}",
-    "vpc_id": "{{user `vpc_id`}}",
-    "subnet_id": "{{user `subnet_id`}}",
-    "iam_instance_profile": "{{user `instance_profile`}}",
-    "ami_users": "{{user `ami_users`}}",
-    "temporary_security_group_source_cidr": "10.0.0.0/8"
-  }],
+  "builders": [
+    {
+      "type": "amazon-ebs",
+      "ami_name": "endpoints-collation-service-{{user `build_version`}}",
+      "region": "{{user `aws_region`}}",
+      "source_ami": "{{user `ami`}}",
+      "instance_type": "{{user `instance_type`}}",
+      "associate_public_ip_address": false,
+      "ssh_username": "{{user `user`}}",
+      "vpc_id": "{{user `vpc_id`}}",
+      "subnet_id": "{{user `subnet_id`}}",
+      "iam_instance_profile": "{{user `instance_profile`}}",
+      "ami_users": "{{user `ami_users`}}",
+      "temporary_security_group_source_cidr": "10.0.0.0/8",
+      "snapshot_tags": {
+        "tr:service-name": "endpoints-collation-service"
+      }
+    }
+  ],
   "provisioners": [{
     "type": "shell",
     "inline": [
