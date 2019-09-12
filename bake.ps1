@@ -15,6 +15,9 @@ Import-Module ".\infrastructure-scripts\private\powershell\Jenkins.psm1" -Force
 Import-Module ".\infrastructure-scripts\private\powershell\InfrastructureConfiguration.psm1" -Force
 Import-Module ".\infrastructure-scripts\private\powershell\ConvertPEMToPPK.psm1" -Force
 Import-Module ".\infrastructure-scripts\public\powershell\ManageSshTunnel.psm1" -Force
+Import-Module ".\infrastructure-scripts\private\powershell\CommitTagging.psm1" -Force
+
+Setup-CommitTaggingTool
 
 #############################################################
 #
@@ -90,9 +93,14 @@ Try {
   Write-Host "[i] AWS_SECRET_ACCESS_KEY =" $(Mask-Key $awsSecretAccessKey)
 
   # Get latest version of linux node base ami
+
+  $commit = Get-Commit -service 'linux-node-base'  `
+                       -tags 'built=true;class=service'
+
   $sourceAMI = Get-AMIID -JobName     'Barossa-BakeAMI-LinuxNodeJS' `
                          -ServiceName 'linux-node-base' `
-                         -Region      $region
+                         -Region      $region `
+                         -Commit      $commit
 
   $extraArgs = @{
     instance_profile = $serviceBakingInstanceProfile;
