@@ -19,13 +19,16 @@ Import-Module ".\infrastructure-scripts\private\powershell\CommitTagging.psm1" -
 
 Setup-CommitTaggingTool
 
+Initialize-ManifestFromFile -Filename ".\statutory-reporting\manifest.json"
+
 #############################################################
 #
 # BEGIN CONFIGURATION
 #
-
+$infraEnvironmentId     = Get-CI-InfraStructureEnvironmentId
 $region                 = Get-CI-Region
 $prefix                 = Get-CI-Prefix
+$kmsKeyId = Get-EC2EncrytionKeyId -InfrastructureEnvironmentId $infraEnvironmentId -RegionId $region
 
 $serviceBakingInstanceProfile = Get-ServiceAMIIAMInstanceProfile $prefix
 
@@ -105,6 +108,7 @@ Try {
   $extraArgs = @{
     instance_profile = $serviceBakingInstanceProfile;
     service_builds_bucket = $buildsBuckets;
+    kms_key_id = $kmsKeyId;
   }
 
   Invoke-Bake -PackerServiceAddress       $bakerServiceAddress `

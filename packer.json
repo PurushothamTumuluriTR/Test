@@ -9,7 +9,8 @@
     "user": "ec2-user",
     "instance_profile": "",
     "service_builds_bucket": "",
-    "ami_users": ""
+    "ami_users": "",
+    "kms_key_id": ""
   },
   "builders": [
     {
@@ -21,10 +22,12 @@
       "associate_public_ip_address": false,
       "ssh_username": "{{user `user`}}",
       "vpc_id": "{{user `vpc_id`}}",
+      "kms_key_id": "{{user `kms_key_id`}}",
+      "encrypt_boot": "true",
       "subnet_id": "{{user `subnet_id`}}",
       "iam_instance_profile": "{{user `instance_profile`}}",
       "ami_users": "{{user `ami_users`}}",
-      "temporary_security_group_source_cidr": "10.0.0.0/8",
+      "temporary_security_group_source_cidrs": "10.0.0.0/8",
       "snapshot_tags": {
         "tr:service-name": "endpoints-collation-service"
       }
