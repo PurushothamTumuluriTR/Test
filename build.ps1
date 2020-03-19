@@ -19,7 +19,8 @@ Try {
     Pop-Location
   } else {
     Write-Host "[i] Getting new endpoints-collation-service..."
-    & git https://github.com/tr/production-engineering_endpoints-collation-service.git endpoints-collation-service #git clone https://git.sami.int.thomsonreuters.com/production-engineering/endpoints-collation-service
+    git clone https://github.com/tr/production-engineering_endpoints-collation-service.git endpoints-collation-service 
+	#git clone https://git.sami.int.thomsonreuters.com/production-engineering/endpoints-collation-service
   }
 
   # node_modules contains very long paths which PowerShell cannot delete.
